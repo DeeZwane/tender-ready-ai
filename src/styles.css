@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@theme {
+ --color-navy-950:#0a192b; --color-navy-900:#10243a; --color-navy-800:#193654;
+ --color-blue-700:#205f9e; --color-blue-600:#2879be; --color-blue-100:#e9f3fc;
+ --color-green-700:#147d58; --color-green-600:#19a36e; --color-green-100:#e8f8f0;
+ --color-canvas:#f4f7fb; --color-ink:#1c3046; --color-muted:#64768a;
+ --color-line:#dce5ee; --color-white:#ffffff;
+}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--color-ink);background:var(--color-canvas)}
+button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;padding:.72rem 1.15rem;font-weight:650;transition:.15s}
+.btn-primary{background:var(--color-blue-700);color:white}.btn-primary:hover:not(:disabled){background:var(--color-navy-800)}
+.btn-light{background:var(--color-blue-100);color:var(--color-blue-700)}
+.panel{background:white;border:1px solid var(--color-line);border-radius:1.15rem;box-shadow:0 8px 28px #183b5c08}
+.field{width:100%;border:1px solid var(--color-line);border-radius:.75rem;padding:.8rem 1rem;background:white;outline:none}.field:focus{border-color:var(--color-blue-600);box-shadow:0 0 0 3px #2879be22}
+.navitem{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;border-radius:.75rem;width:100%;text-align:left;color:#c8d9e9}
+.navitem:hover,.navitem.active{background:#244560;color:white}
+.small-label{font-size:.74rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--color-muted)}
