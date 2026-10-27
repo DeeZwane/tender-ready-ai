@@ -1,0 +1,154 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Transform: AWS::Serverless-2016-10-31
+
+Description: TenderReady AI Frontend Hosting
+
+Resources:
+
+  FrontendBucket:
+
+    Type: AWS::S3::Bucket
+
+    Properties:
+
+      BucketEncryption:
+
+        ServerSideEncryptionConfiguration:
+
+          - ServerSideEncryptionByDefault:
+
+              SSEAlgorithm: AES256
+
+      PublicAccessBlockConfiguration:
+
+        BlockPublicAcls: true
+
+        BlockPublicPolicy: true
+
+        IgnorePublicAcls: true
+
+        RestrictPublicBuckets: true
+
+  FrontendOAC:
+
+    Type: AWS::CloudFront::OriginAccessControl
+
+    Properties:
+
+      OriginAccessControlConfig:
+
+        Name: !Sub '${AWS::StackName}-frontend-oac'
+
+        OriginAccessControlOriginType: s3
+
+        SigningBehavior: always
+
+        SigningProtocol: sigv4
+
+  FrontendDistribution:
+
+    Type: AWS::CloudFront::Distribution
+
+    Properties:
+
+      DistributionConfig:
+
+        Enabled: true
+
+        DefaultRootObject: index.html
+
+        Origins:
+
+          - Id: S3Origin
+
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+
+            S3OriginConfig:
+
+              OriginAccessIdentity: ''
+
+            OriginAccessControlId: !GetAtt FrontendOAC.Id
+
+        DefaultCacheBehavior:
+
+          TargetOriginId: S3Origin
+
+          ViewerProtocolPolicy: redirect-to-https
+
+          Compress: true
+
+          AllowedMethods: [GET, HEAD, OPTIONS]
+
+          CachedMethods: [GET, HEAD, OPTIONS]
+
+          ForwardedValues:
+
+            QueryString: false
+
+        CustomErrorResponses:
+
+          - ErrorCode: 403
+
+            ResponseCode: 200
+
+            ResponsePagePath: /index.html
+
+          - ErrorCode: 404
+
+            ResponseCode: 200
+
+            ResponsePagePath: /index.html
+
+        ViewerCertificate:
+
+          CloudFrontDefaultCertificate: true
+
+  FrontendBucketPolicy:
+
+    Type: AWS::S3::BucketPolicy
+
+    Properties:
+
+      Bucket: !Ref FrontendBucket
+
+      PolicyDocument:
+
+        Statement:
+
+          - Effect: Allow
+
+            Principal:
+
+              Service: cloudfront.amazonaws.com
+
+            Action: s3:GetObject
+
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+
+            Condition:
+
+              StringEquals:
+
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}'
+
+Outputs:
+
+  FrontendBucketName:
+
+    Description: S3 Bucket for Frontend files
+
+    Value: !Ref FrontendBucket
+
+  CloudFrontDistributionId:
+
+    Description: CloudFront Distribution ID
+
+    Value: !Ref FrontendDistribution
+
+  FrontendURL:
+
+    Description: The URL of your live frontend
+
+    Value: !Sub 'https://${FrontendDistribution.DomainName}'

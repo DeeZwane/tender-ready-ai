@@ -1,112 +1,76 @@
-import { Check, CheckCircle2, FileText, Info } from 'lucide-react';
 
-type ProgressProps = {
-  file: File | null;
-  step: number;
-  onStepChange: (step: number) => void;
-  onViewSummary: () => void;
-};
+import { useEffect, useState } from 'react';
 
-export default function Progress({
-  file,
-  step,
-  onStepChange,
-  onViewSummary,
-}: ProgressProps) {
-  const stages = [
-    'PDF selected',
-    'Text extraction preview',
-    'AI analysis preview',
-    'Checklist generation preview',
-  ];
+import { Check, Loader2, FileText } from 'lucide-react';
+
+import { analyzeTender } from '../services/api';
+
+export default function Progress({ file, tenderId, onAnalysisComplete }: { file: File | null, tenderId: string | null, onAnalysisComplete: (data: any) => void }) {
+
+  const [step, setStep] = useState(1);
+
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+
+    if (!tenderId) return;
+
+    const runAnalysis = async () => {
+
+      try {
+
+        // Visually step through while waiting for Bedrock/Textract
+
+        const interval = setInterval(() => setStep(s => Math.min(s + 1, 3)), 3000);
+
+        const result = await analyzeTender(tenderId);
+
+        clearInterval(interval);
+
+        setStep(4);
+
+        // Brief pause to show the final checkmark before navigating
+
+        setTimeout(() => onAnalysisComplete(result), 1500);
+
+      } catch (err: any) {
+
+        setError('Analysis failed. Please try again.');
+
+      }
+
+    };
+
+    runAnalysis();
+
+  }, [tenderId, onAnalysisComplete]);
+
+  const stages = ['Uploading to S3', 'Text extraction (Textract)', 'AI analysis (Bedrock)', 'Checklist generation'];
 
   return (
-    <>
-      <div className="mb-8">
-        <p className="small-label">Document workflow</p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-navy-900 mt-2">
-          Analysis progress
-        </h1>
-        <p className="text-muted mt-3">
-          Illustrative processing preview. These stages are not connected to AWS.
-        </p>
-      </div>
+<div className="panel p-8 max-w-3xl mx-auto mt-10">
+<h1 className="text-2xl font-bold text-navy-900 mb-8 flex items-center gap-3">
+<FileText className="text-blue-700" /> Processing {file?.name || 'Document'}
+</h1>
 
-      <div className="panel p-7 sm:p-10 max-w-3xl">
-        <div className="flex items-center gap-3 mb-8">
-          <FileText className="text-blue-700" />
-
-          <div>
-            <b>{file?.name ?? 'Sample tender'}</b>
-            <p className="text-sm text-muted">Sample preview only</p>
-          </div>
-        </div>
+      {error && <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-6">{error}</div>}
+<div className="space-y-6">
 
         {stages.map((label, index) => (
-          <div className="flex gap-4 pb-7 last:pb-0" key={label}>
-            <span
-              className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center ${
-                step > index
-                  ? 'bg-green-100 text-green-700'
-                  : step === index
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-canvas text-muted'
-              }`}
-            >
-              {step > index ? <Check size={20} /> : index + 1}
-            </span>
+<div className="flex gap-4 items-center" key={label}>
+<span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${step > index ? 'bg-green-100 text-green-700' : step === index ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
 
-            <div className="flex-1 border-b border-line pb-5">
-              <b>{label}</b>
-              <p className="text-sm text-muted mt-1">
-                {step > index
-                  ? 'Sample step complete'
-                  : step === index
-                    ? 'Preview in progress'
-                    : 'Waiting'}
-              </p>
-            </div>
-          </div>
+              {step > index ? <Check size={20} /> : step === index ? <Loader2 size={20} className="animate-spin" /> : index + 1}
+</span>
+<div className="flex-1">
+<p className={`font-semibold ${step > index ? 'text-green-700' : step === index ? 'text-blue-700' : 'text-gray-500'}`}>{label}</p>
+</div>
+</div>
+
         ))}
+</div>
+</div>
 
-        {step >= 4 && (
-          <div className="mt-7 rounded-xl bg-green-100 p-5">
-            <div className="flex gap-2 items-center font-bold text-green-700">
-              <CheckCircle2 size={20} />
-              Sample preview ready
-            </div>
-
-            <p className="text-sm text-green-700 mt-2">
-              The next screens contain illustrative information, not results extracted from your PDF.
-            </p>
-
-            <button
-              type="button"
-              className="btn btn-primary mt-4"
-              onClick={onViewSummary}
-            >
-              View sample summary
-            </button>
-          </div>
-        )}
-
-        {step < 4 && (
-          <p className="text-xs text-muted mt-4 flex gap-2 items-start">
-            <Info size={16} className="shrink-0" />
-            This is a simulated progress indicator, not actual document processing.
-          </p>
-        )}
-
-        {step < 4 && (
-          <button
-            type="button"
-            className="btn btn-light mt-4"
-            onClick={() => onStepChange(Math.min(step + 1, 4))}
-          >
-            Advance preview stage
-          </button>
-        )}
-      </div>
-    </>
   );
+
 }
